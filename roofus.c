@@ -1,41 +1,102 @@
-#define VERSION "0.02"
+#define VERSION "0.10"
 
 #define N 5
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 
+void menu ();
+int play ();
 void start ();
+void settings ();
 void printm ();
 void move (char *dir);
 void nolow ();
+void ranking ();
 int win ();
 int error ();
 
 int matrix[N][N];
-int my_x = N / 2;
-int my_y = N / 2;
+int my_x;
+int my_y;
 int moves = 0;
 
 int main () {
-    char dir[20];
-    char exit;
-    int end = 0;
 	srand (time(NULL));
     
+    menu ();
+    
+    printf ("\n\n\n\nv%s", VERSION);
+    return 0;
+}
+
+void menu (){
+    char mode[5];
+    int menu = 1;
+    while (menu == 1) {
+        system("clear");
+        printf ("Select mode:\n> 0: Play\n> 1: Settings\n> 2: Ranking\n> 3: Exit\n");
+        scanf ("%5s", mode);
+        switch (mode[0]) {
+            case '0': menu = play (); break;
+            case '1': settings (); break;
+            case '2': ranking (); break;
+            case '3': return;
+        }
+    }
+}
+
+void settings () {
+    char setting[5];
+    int menu = 0;
+    system("clear");
+    while (menu == 0) {
+        printf ("Not available. Press 0\n");
+        scanf ("%5s", setting);
+        switch (setting[0]) {
+            case '0': menu = 1; break;
+            case '1': break;
+            case '2': return;
+        }
+    }    
+}
+
+void ranking () {
+    char back[5];
+    system("clear");
+    printf ("Not available. Press 0\n");
+    scanf ("%5s", back);
+}
+
+int play () {
+    char dir[5];
+    char exit = 0;
+    int end = 0;
+    my_x = N / 2;
+    my_y = N / 2;
+    system("clear");
     start ();
     printm ();
     while (end == 0) {
-        printf ("\nLeft: a. Up: w. Right: d. Down: s. Exit: 0");
+        printf ("\nLeft: a. Up: w. Right: d. Down: s. Menu: m. Exit: 0");
         printf ("\nDirection?  ");
-        scanf ("%s", dir);
+        scanf ("%5s", dir);
         getchar ();
         if (dir[0] == '0') {
             printf ("\nExit? [y/n]  ");
             scanf ("%c", &exit);
             if (exit == 'y') {
-                printf ("\n\n\n\nv%s", VERSION);
-                return moves;
+                return 0;
+            } else {
+                dir[0] = '1';
+                getchar ();
+            }
+        }
+        if (dir[0] == 'm') {
+            printf ("\nAre you sure? [y/n]  ");
+            scanf ("%c", &exit);
+            if (exit == 'y') {
+                return 1;
             } else {
                 dir[0] = '1';
                 getchar ();
@@ -45,7 +106,7 @@ int main () {
         printm ();
         end = win ();
     }
-    return 0;
+    return 1;
 }
 
 void start () {
@@ -106,20 +167,20 @@ void move (char *dir) {
     if (stop == 0) {
         // change values
         if (*dir == 'd') {
-            for (j = 1 + xinit; j <= 4; j++) {
-                if (matrix[yinit][j] != 0) {
-                    matrix[yinit][j] = matrix[yinit][j] - matrix[yinit][xinit];
-                    if (matrix[yinit][j] < 0 && matrix[yinit][xinit] != 0)
-                        matrix[yinit][j] = -matrix[yinit][j];
+            for (j = my_x; j < N; j++) {
+                if (matrix[my_y][j] != 0) {
+                    matrix[my_y][j] = matrix[my_y][j] - matrix[yinit][xinit];
+                    if (matrix[my_y][j] < 0 && matrix[yinit][xinit] != 0)
+                        matrix[my_y][j] = -matrix[my_y][j];
                 }
             }
         }
         if (*dir == 'a') {
             for (j = 0; j < xinit; j++) {
-                if (matrix[yinit][j] != 0) {
-                    matrix[yinit][j] = matrix[yinit][j] - matrix[yinit][xinit];
-                    if (matrix[yinit][j] < 0 && matrix[yinit][xinit] != 0)
-                        matrix[yinit][j] = -matrix[yinit][j];
+                if (matrix[my_y][j] != 0) {
+                    matrix[my_y][j] = matrix[my_y][j] - matrix[my_y][xinit];
+                    if (matrix[my_y][j] < 0 && matrix[yinit][xinit] != 0)
+                        matrix[my_y][j] = -matrix[my_y][j];
                 }
             }
         }
@@ -160,6 +221,7 @@ void nolow () {
 // print matrix
 void printm () {
     int i, j;
+    system("clear");
     printf ("\n\n");
     for (i = 0; i < N; i++) {
         for (j = 0;j < N; j++) {
@@ -183,10 +245,11 @@ int win () { // 20+ zeros
         }
     }
     if (count >= N * (N-1)) {
-        printf ("\nYou win! Moves: %d", moves);
+        printf ("\nYou win! Moves: %d\n", moves);
+        getchar ();
         return 1;
     }else{
-        printf ("\nYou still need to delete %d numbers", N * (N-1) - count);
+        printf ("\nYou still need to delete %d numbers. Moves: %d", N * (N-1) - count, moves);
         return 0;
     }
 }
