@@ -1,6 +1,6 @@
-#define VERSION "0.10"
+#define VERSION "0.11"
 
-#define N 5
+#define N 9
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -16,10 +16,11 @@ void ranking ();
 int win ();
 int error ();
 
-int matrix[N][N];
+int matrix[N][N] = {0};
 int my_x;
 int my_y;
-int moves = 0;
+int moves;
+int grid = 5;
 
 int main () {
 	srand (time(NULL));
@@ -51,12 +52,15 @@ void settings () {
     int menu = 0;
     system("clear");
     while (menu == 0) {
-        printf ("Not available. Press 0\n");
+        printf ("Menu: press 0\nGrid size? 3, 5, 7 or 9? ");
         scanf ("%5s", setting);
         switch (setting[0]) {
             case '0': menu = 1; break;
-            case '1': break;
-            case '2': return;
+            case '3': grid = 3; menu = 1; break;
+            case '5': grid = 5; menu = 1; break;
+            case '7': grid = 7; menu = 1; break;
+            case '9': grid = 9; menu = 1; break;
+            default: printf("Retry\n"); break;
         }
     }    
 }
@@ -72,8 +76,9 @@ int play () {
     char dir[5];
     char exit = 0;
     int end = 0;
-    my_x = N / 2;
-    my_y = N / 2;
+    my_x = grid / 2;
+    my_y = grid / 2;
+    moves = 0;
     system("clear");
     start ();
     printm ();
@@ -111,8 +116,8 @@ int play () {
 
 void start () {
     int i, j;
-    for (i = 0; i < N; i++) {
-        for (j = 0; j < N; j++) {
+    for (i = 0; i < grid; i++) {
+        for (j = 0; j < grid; j++) {
             matrix[i][j] = rand () % 19 + 1;
         }
     }
@@ -137,7 +142,7 @@ void move (char *dir) {
             }
             break;
         case 'd': 
-            if (my_x < N-1) {
+            if (my_x < grid - 1) {
                 my_x++; 
             } else {
                 stop = error ();
@@ -151,7 +156,7 @@ void move (char *dir) {
             }
             break;
         case 's':
-            if(my_y < N-1) {
+            if(my_y < grid - 1) {
                 my_y++; 
             } else {
                 stop = error ();
@@ -167,7 +172,7 @@ void move (char *dir) {
     if (stop == 0) {
         // change values
         if (*dir == 'd') {
-            for (j = my_x; j < N; j++) {
+            for (j = my_x; j < grid; j++) {
                 if (matrix[my_y][j] != 0) {
                     matrix[my_y][j] = matrix[my_y][j] - matrix[yinit][xinit];
                     if (matrix[my_y][j] < 0 && matrix[yinit][xinit] != 0)
@@ -185,7 +190,7 @@ void move (char *dir) {
             }
         }
          if (*dir == 'w'){
-            for (i = my_y;i >= 0; i--) {
+            for (i = my_y; i >= 0; i--) {
                 if (matrix[i][my_x] != 0) {
                     matrix[i][my_x] = matrix[i][my_x] - matrix[yinit][xinit];
                     if (matrix[i][my_x] < 0 && matrix[yinit][xinit] != 0)
@@ -194,7 +199,7 @@ void move (char *dir) {
             }
         }
          if (*dir == 's'){
-            for (i = my_y; i < N; i++) {
+            for (i = my_y; i < grid; i++) {
                 if(matrix[i][my_x] != 0) {
                     matrix[i][my_x] = matrix[i][my_x] - matrix[yinit][xinit];
                     if (matrix[i][my_x] < 0 && matrix[yinit][xinit] != 0)
@@ -210,8 +215,8 @@ void move (char *dir) {
 // if 1 or 2 -> random number
 void nolow () {
     int i, j;
-    for (i = 0; i < N; i++) {
-        for (j = 0; j < N; j++) {
+    for (i = 0; i < grid; i++) {
+        for (j = 0; j < grid; j++) {
             if ( matrix[i][j] < 3 && matrix[i][j] > 0)
                 matrix[i][j] = rand () % 10 - 10;
         }
@@ -223,8 +228,8 @@ void printm () {
     int i, j;
     system("clear");
     printf ("\n\n");
-    for (i = 0; i < N; i++) {
-        for (j = 0;j < N; j++) {
+    for (i = 0; i < grid; i++) {
+        for (j = 0;j < grid; j++) {
             if (i == my_y && j == my_x)
                 printf ("> ");
             if (matrix[i][j] != 0)
@@ -238,18 +243,18 @@ void printm () {
 
 int win () { // 20+ zeros
     int i, j, count=0;
-    for (i = 0; i < N; i++) {
-        for (j = 0; j < N; j++) {
+    for (i = 0; i < grid; i++) {
+        for (j = 0; j < grid; j++) {
             if (matrix[i][j] == 0)
                 count++;
         }
     }
-    if (count >= N * (N-1)) {
+    if (count >= grid * (grid - 1)) {
         printf ("\nYou win! Moves: %d\n", moves);
         getchar ();
         return 1;
     }else{
-        printf ("\nYou still need to delete %d numbers. Moves: %d", N * (N-1) - count, moves);
+        printf ("\nYou still need to delete %d numbers. Moves: %d", grid * (grid - 1) - count, moves);
         return 0;
     }
 }
