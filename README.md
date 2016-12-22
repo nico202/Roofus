@@ -1,6 +1,6 @@
-# Roofus.c
+* # Roofus.c
 Clear the table
 
-# Phagus.c
+* # Phagus.c
 Eat and survive
   
