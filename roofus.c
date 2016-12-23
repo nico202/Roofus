@@ -1,9 +1,10 @@
-#define VERSION "0.11"
+#define VERSION "0.20"
 
 #define N 9
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
 
 void menu ();
 int play ();
@@ -21,12 +22,17 @@ int my_x;
 int my_y;
 int moves;
 int grid = 5;
+FILE *fp;
 
 int main () {
 	srand (time(NULL));
-    
-    menu ();
-    
+    fp = fopen ("roofus.txt", "a+");
+    if (fp == NULL) {
+        printf ("Error opening file");
+    }else{
+        menu ();
+    }
+    fclose (fp);
     printf ("\n\n\n\nv%s", VERSION);
     return 0;
 }
@@ -62,23 +68,48 @@ void settings () {
             case '9': grid = 9; menu = 1; break;
             default: printf("Retry\n"); break;
         }
-    }    
+    }
 }
 
 void ranking () {
-    char back[5];
+    int i = 0, j ,a;
+    int best[1000] = {0};
+    int grid_val[1000];
+    time_t res_time[1000];
+    char *time_string[1000];
     system("clear");
-    printf ("Not available. Press 0\n");
-    scanf ("%5s", back);
+    rewind (fp);
+    getchar ();
+    do {
+        fscanf (fp, "%d %li %d", &best[i], &res_time[i], &grid_val[i]);
+        i++;  
+    } while (best[i-1] > 0);
+    for (i = 0; best[i] != 0; i++) {
+        for (j = i + 1; best[j] !=0; j++) {
+            if (best[i] > best[j]) {
+                a = best[i];
+                best[i] = best[j];
+                best[j] = a;
+            }
+        }
+    }
+    printf ("Best results: \n\n");
+    for (i=0; i < 10 && best[i] != 0; i++) { 
+        time_string[i] = ctime(&res_time[i]);
+//      printf ("#%d: %3d moves\t- %dx%d matrix\t- %s", i + 1, best[i], grid_val[i], grid_val[i], time_string[i]);
+        printf ("#%d: %3d moves\n", i + 1, best[i]);
+    }
+    getchar ();
 }
 
 int play () {
     char dir[5];
     char exit = 0;
     int end = 0;
+    char *text = malloc (sizeof (text) * N);
     my_x = grid / 2;
     my_y = grid / 2;
-    moves = 0;
+    moves = 0;    
     system("clear");
     start ();
     printm ();
@@ -111,6 +142,9 @@ int play () {
         printm ();
         end = win ();
     }
+    sprintf (text, "%d %li %d\n", moves, time(NULL), grid);
+    fputs (text, fp);
+    free (text);
     return 1;
 }
 
@@ -126,7 +160,7 @@ void start () {
 
 void move (char *dir) {
     int xinit, yinit;
-    int stop = 0;
+    int stop = 0, del = 0;
     int i, j;
 
     xinit = my_x;
@@ -175,6 +209,8 @@ void move (char *dir) {
             for (j = my_x; j < grid; j++) {
                 if (matrix[my_y][j] != 0) {
                     matrix[my_y][j] = matrix[my_y][j] - matrix[yinit][xinit];
+                    if (matrix[my_y][j] == 0)
+                        del = 1;
                     if (matrix[my_y][j] < 0 && matrix[yinit][xinit] != 0)
                         matrix[my_y][j] = -matrix[my_y][j];
                 }
@@ -184,8 +220,10 @@ void move (char *dir) {
             for (j = 0; j < xinit; j++) {
                 if (matrix[my_y][j] != 0) {
                     matrix[my_y][j] = matrix[my_y][j] - matrix[my_y][xinit];
+                    if (matrix[my_y][j] == 0)
+                        del = 1;
                     if (matrix[my_y][j] < 0 && matrix[yinit][xinit] != 0)
-                        matrix[my_y][j] = -matrix[my_y][j];
+                        matrix[my_y][j] = - matrix[my_y][j];
                 }
             }
         }
@@ -193,6 +231,8 @@ void move (char *dir) {
             for (i = my_y; i >= 0; i--) {
                 if (matrix[i][my_x] != 0) {
                     matrix[i][my_x] = matrix[i][my_x] - matrix[yinit][xinit];
+                    if (matrix[i][my_x] == 0)
+                        del = 1;
                     if (matrix[i][my_x] < 0 && matrix[yinit][xinit] != 0)
                         matrix[i][my_x] = -matrix[i][my_x];
                 }
@@ -202,11 +242,15 @@ void move (char *dir) {
             for (i = my_y; i < grid; i++) {
                 if(matrix[i][my_x] != 0) {
                     matrix[i][my_x] = matrix[i][my_x] - matrix[yinit][xinit];
+                    if (matrix[i][my_x] == 0)
+                        del = 1;
                     if (matrix[i][my_x] < 0 && matrix[yinit][xinit] != 0)
                         matrix[i][my_x] = -matrix[i][my_x];
                 }
             }
         }
+        if (del == 1)
+            matrix[yinit][xinit] = 0;
         nolow ();
         moves++;
     }
@@ -241,7 +285,7 @@ void printm () {
     }
 }
 
-int win () { // 20+ zeros
+int win () {
     int i, j, count=0;
     for (i = 0; i < grid; i++) {
         for (j = 0; j < grid; j++) {
