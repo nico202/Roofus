@@ -1,4 +1,4 @@
-#define VERSION "0.21"
+#define VERSION "0.22"
 
 #define N 9
 #include <stdio.h>
@@ -102,7 +102,7 @@ void ranking () {
         system("clear");
         printf ("Best results: \n\n");
         printed = 0;
-        for (i = 0; result[i+1].best != 0; i++) {
+        for (i = 0; result[i].best != 0; i++) {
             if ((result[i].grid == grid_val || grid_val == 1) && printed < 10) {
                 time_string[i] = ctime(&result[i].res_time);
                 printf ("# %d\t%3d moves\t- %dx%d matrix\t- %s", printed + 1, result[i].best, result[i].grid, result[i].grid, time_string[i]);
