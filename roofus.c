@@ -1,4 +1,4 @@
-#define VERSION "0.22"
+#define VERSION "0.23"
 
 #define N 9
 #include <stdio.h>
@@ -74,8 +74,9 @@ void settings () {
 void ranking () {
     int i = 0, j;
     struct res {
-        int best;
+        int moves;
         int grid;
+        char user[10];
         time_t res_time;
     };
     struct res result[1000];
@@ -86,12 +87,12 @@ void ranking () {
     rewind (fp);
     getchar ();
     do {
-        fscanf (fp, "%d %li %d", &result[i].best, &result[i].res_time, &result[i].grid);
+        fscanf (fp, "%li %d %s %d", &result[i].res_time, &result[i].moves, result[i].user, &result[i].grid);
         i++;  
-    } while (result[i-1].best > 0);
-    for (i = 0; result[i].best != 0; i++) {
-        for (j = i + 1; result[j].best != 0; j++) {
-            if (result[i].best > result[j].best) {
+    } while (result[i-1].moves > 0);
+    for (i = 0; result[i].moves != 0; i++) {
+        for (j = i + 1; result[j].moves != 0; j++) {
+            if (result[i].moves > result[j].moves) {
                 temp = result[i];
                 result[i] = result[j];
                 result[j] = temp;
@@ -102,10 +103,10 @@ void ranking () {
         system("clear");
         printf ("Best results: \n\n");
         printed = 0;
-        for (i = 0; result[i].best != 0; i++) {
-            if ((result[i].grid == grid_val || grid_val == 1) && printed < 10) {
+        for (i = 0; result[i].moves != 0; i++) {
+            if ((result[i].grid == grid_val || grid_val == 1) && printed < 9) {
                 time_string[i] = ctime(&result[i].res_time);
-                printf ("# %d\t%3d moves\t- %dx%d matrix\t- %s", printed + 1, result[i].best, result[i].grid, result[i].grid, time_string[i]);
+                printf ("# %d - %3d moves\t- (%dx%d matrix) - %s\t- %s", printed + 1, result[i].moves, result[i].grid, result[i].grid, result[i].user, time_string[i]);
                 printed++;
             }
         }
@@ -119,7 +120,7 @@ void ranking () {
 }
 
 int play () {
-    char dir[5];
+    char dir[5], user[10];
     char exit = 0;
     int end = 0;
     char *text = malloc (sizeof (text) * N);
@@ -157,8 +158,12 @@ int play () {
         move (dir);
         printm ();
         end = win ();
+        if (end != 0) {
+            printf ("Enter your name: ");
+            scanf ("%10s", user);
+        }
     }
-    sprintf (text, "%d %li %d\n", moves, time(NULL), grid);
+    sprintf (text, "%li %d %s %d\n", time(NULL), moves, user, grid);
     fputs (text, fp);
     free (text);
     return 1;
