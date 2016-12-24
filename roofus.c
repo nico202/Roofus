@@ -1,4 +1,4 @@
-#define VERSION "0.20"
+#define VERSION "0.21"
 
 #define N 9
 #include <stdio.h>
@@ -33,7 +33,7 @@ int main () {
         menu ();
     }
     fclose (fp);
-    printf ("\n\n\n\nv%s", VERSION);
+    printf ("\n\n\n\nRoofus v%s", VERSION);
     return 0;
 }
 
@@ -72,34 +72,50 @@ void settings () {
 }
 
 void ranking () {
-    int i = 0, j ,a;
-    int best[1000] = {0};
-    int grid_val[1000];
-    time_t res_time[1000];
+    int i = 0, j;
+    struct res {
+        int best;
+        int grid;
+        time_t res_time;
+    };
+    struct res result[1000];
+    struct res temp;
     char *time_string[1000];
-    system("clear");
+    int grid_val = 1;
+    int printed;
     rewind (fp);
     getchar ();
     do {
-        fscanf (fp, "%d %li %d", &best[i], &res_time[i], &grid_val[i]);
+        fscanf (fp, "%d %li %d", &result[i].best, &result[i].res_time, &result[i].grid);
         i++;  
-    } while (best[i-1] > 0);
-    for (i = 0; best[i] != 0; i++) {
-        for (j = i + 1; best[j] !=0; j++) {
-            if (best[i] > best[j]) {
-                a = best[i];
-                best[i] = best[j];
-                best[j] = a;
+    } while (result[i-1].best > 0);
+    for (i = 0; result[i].best != 0; i++) {
+        for (j = i + 1; result[j].best != 0; j++) {
+            if (result[i].best > result[j].best) {
+                temp = result[i];
+                result[i] = result[j];
+                result[j] = temp;
             }
         }
     }
-    printf ("Best results: \n\n");
-    for (i=0; i < 10 && best[i] != 0; i++) { 
-        time_string[i] = ctime(&res_time[i]);
-//      printf ("#%d: %3d moves\t- %dx%d matrix\t- %s", i + 1, best[i], grid_val[i], grid_val[i], time_string[i]);
-        printf ("#%d: %3d moves\n", i + 1, best[i]);
-    }
-    getchar ();
+    do {
+        system("clear");
+        printf ("Best results: \n\n");
+        printed = 0;
+        for (i = 0; result[i+1].best != 0; i++) {
+            if ((result[i].grid == grid_val || grid_val == 1) && printed < 10) {
+                time_string[i] = ctime(&result[i].res_time);
+                printf ("# %d\t%3d moves\t- %dx%d matrix\t- %s", printed + 1, result[i].best, result[i].grid, result[i].grid, time_string[i]);
+                printed++;
+            }
+        }
+        if (printed == 0) {
+            printf ("Nothing to show...\n");
+        }
+        printf ("\n0: Menu;  3, 5, 7 or 9 to filter by matrix size;  1: No filter  ");
+        scanf ("%d", &grid_val);
+        getchar();
+    } while (grid_val != 0);
 }
 
 int play () {
