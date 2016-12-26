@@ -1,4 +1,4 @@
-#define VERSION "1.00"
+#define VERSION "1.01"
 
 #define N 9
 #define USERNAME_LENGTH 10
@@ -31,6 +31,11 @@ int gridset = 0;
 FILE *fp;
 
 int main () {
+    initscr();
+    noecho();
+    cbreak();
+    keypad(stdscr, true);
+
     srand (time(NULL));
     fp = fopen ("roofus.txt", "a+");
     if (fp == NULL) {
@@ -63,11 +68,6 @@ void restoregrid () {
 void menu (){
     int mode;
   
-    initscr();
-    noecho();
-    cbreak();
-    keypad(stdscr, true);
-
     while (1) {
         clear();
         printw ("~~~ ROOFUS ~~~\n\n[1] Play\n[2] Ranking\n[3] Settings\n[4] Rules\n[q] Quit\n\n");
