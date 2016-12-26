@@ -1,23 +1,26 @@
-#define VERSION "0.30"
+#define VERSION "1.00"
 
 #define N 9
+#define USERNAME_LENGTH 10
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <ncurses.h>
+
 void restoregrid ();
 void menu ();
 void play ();
 void start ();
-void move (char *dir);
+void move_ptr (int direction);
 void nolow ();
 void settings ();
 void ranking ();
 void rules ();
 void printm ();
 int win ();
-int error ();
 
 int matrix[N][N] = {0};
 int my_x;
@@ -28,83 +31,101 @@ int gridset = 0;
 FILE *fp;
 
 int main () {
-	srand (time(NULL));
+    srand (time(NULL));
     fp = fopen ("roofus.txt", "a+");
     if (fp == NULL) {
-        printf ("Error opening file");
+        printw ("Error opening file");
+        refresh();
     }else{
         restoregrid ();
         menu ();
     }
     fclose (fp);
-    printf ("\n\n\n\nRoofus v%s", VERSION);
+    printw ("\n\n\n\nRoofus v%s", VERSION);
+    refresh ();
+    endwin();
     return 0;
 }
 
 // restore last grid size
 void restoregrid () {
     int gridtemp, length;
-        fseek(fp, 0, SEEK_END);
-        length = ftell(fp);
-        fseek(fp, (length - 2), SEEK_SET); // go to grid size character
-        gridtemp = fgetc(fp) - 48; // -48 to convert char in int
-        if (gridtemp < 3 || gridtemp > 9)
-            grid = 5;
-        else
-            grid = gridtemp;
+    fseek(fp, 0, SEEK_END);
+    length = ftell(fp);
+    fseek(fp, (length - 2), SEEK_SET); // go to grid size character
+    gridtemp = fgetc(fp) - 48; // -48 to convert char in int
+    if (gridtemp < 3 || gridtemp > 9)
+        grid = 5;
+    else
+        grid = gridtemp;
 }
 
 void menu (){
-    char mode[5];
+    int mode;
+  
+    initscr();
+    noecho();
+    cbreak();
+    keypad(stdscr, true);
+
     while (1) {
-        system("clear");
-        printf ("~~~ ROOFUS ~~~\n\n[1] Play\n[2] Ranking\n[3] Settings\n[4] Rules\n[0] Exit\n\n");
-        scanf ("%5s", mode);
-        switch (mode[0]) {
-            case '0': return;
-            case '1': play (); break;
-            case '2': ranking (); break;
-            case '3': settings (); break;
-            case '4': rules (); break;
+        clear();
+        printw ("~~~ ROOFUS ~~~\n\n[1] Play\n[2] Ranking\n[3] Settings\n[4] Rules\n[q] Quit\n\n");
+        refresh();
+        mode = getch();
+
+        switch (mode) {
+        case 'q': return;
+        case '1': play (); break;
+        case '2': ranking (); break;
+        case '3': settings (); break;
+        case '4': rules (); break;
         }
     }
+    /* return 0; */
 }
 
 void play () {
-    char dir[5], user[10];
-    char exit = 0;
+    char user[USERNAME_LENGTH];
+    int direction;
+    int exit = 0;
     int end = 0;
     char *text = malloc (sizeof (text) * N);
     moves = 0;
-    system("clear");
+    clear();
     my_x = grid / 2;
     my_y = grid / 2;
     start ();
-    printm ();
+
     while (end == 0) {
-        printf ("\nLeft [a]; Up [w]; Right [d]; Down [s]. Menu [0]");
-        printf ("\nDirection?  ");
-        scanf ("%5s", dir);
-        getchar ();
-        if (dir[0] == '0') {
-            printf ("\nAre you sure? [y/n]  ");
-            scanf ("%c", &exit);
+        printw ("\nArrow to move, q to quit\n");
+        refresh();
+
+        direction = getch();
+        if (direction == 'q') {
+            printw ("\nAre you sure? [y/n]  ");
+            refresh();
+            exit = getch();
             if (exit == 'y') {
                 return;
             } else {
-                dir[0] = '1';
+                direction = '1';
                 getchar ();
             }
         }
-        move (dir);
+
+        move_ptr (direction);
         printm ();
         end = win ();
         if (end != 0) {
-            printf ("Enter your name: ");
-            scanf ("%10s", user);
+            echo();
+            printw ("Enter your name: ");
+            refresh();
+            getnstr(user, USERNAME_LENGTH); // read at most
         }
     }
     sprintf (text, "%li %d %s %d\n", time(NULL), moves, user, grid);
+    refresh();
     fputs (text, fp);
     free (text);
     return;
@@ -118,52 +139,50 @@ void start () {
         }
     }
     nolow ();
+    printm();
 }
 
-void move (char *dir) {
+void move_ptr (int direction) {
     int xinit = my_x, yinit = my_y;
     int stop = 0, del = 0;
     int i, j;
-    // move pointer
-    switch (dir[0]) { 
-        case 'a': 
-            if (my_x != 0) {
-                my_x--;
-            } else {
-                stop = error ();
-            }
-            break;
-        case 'd': 
-            if (my_x < grid - 1) {
-                my_x++; 
-            } else {
-                stop = error ();
-            }
-            break;
-        case 'w':                 
-            if (my_y > 0) {
-                my_y--; 
-            } else {
-                stop = error ();
-            }
-            break;
-        case 's':
-            if(my_y < grid - 1) {
-                my_y++; 
-            } else {
-                stop = error ();
-            }
-            break;
-        case 'o':
+    // move_ptr pointer
+    switch (direction) { 
+    case KEY_LEFT: 
+        if (my_x != 0) {
+            my_x--;
+        } else {
             stop = 1;
-            break;
-        default:
-            stop = error ();
-            break;
         }
+        break;
+    case KEY_RIGHT: 
+        if (my_x < grid - 1) {
+            my_x++; 
+        } else {
+            stop = 1;
+        }
+        break;
+    case KEY_UP:                 
+        if (my_y > 0) {
+            my_y--; 
+        } else {
+            stop = 1;
+        }
+        break;
+    case KEY_DOWN:
+        if(my_y < grid - 1) {
+            my_y++; 
+        } else {
+            stop = 1;
+        }
+        break;
+    default:
+        stop = 1;
+        break;
+    }
     if (stop == 0) {
         // change values
-        if (*dir == 'd') {
+        if (direction == KEY_RIGHT) {
             for (j = my_x; j < grid; j++) {
                 if (matrix[my_y][j] != 0) {
                     matrix[my_y][j] = matrix[my_y][j] - matrix[yinit][xinit];
@@ -174,7 +193,7 @@ void move (char *dir) {
                 }
             }
         }
-        if (*dir == 'a') {
+        if (direction == KEY_LEFT) {
             for (j = 0; j < xinit; j++) {
                 if (matrix[my_y][j] != 0) {
                     matrix[my_y][j] = matrix[my_y][j] - matrix[my_y][xinit];
@@ -185,7 +204,7 @@ void move (char *dir) {
                 }
             }
         }
-         if (*dir == 'w'){
+        if (direction == KEY_UP){
             for (i = my_y; i >= 0; i--) {
                 if (matrix[i][my_x] != 0) {
                     matrix[i][my_x] = matrix[i][my_x] - matrix[yinit][xinit];
@@ -196,7 +215,7 @@ void move (char *dir) {
                 }
             }
         }
-         if (*dir == 's'){
+        if (direction == KEY_DOWN){
             for (i = my_y; i < grid; i++) {
                 if(matrix[i][my_x] != 0) {
                     matrix[i][my_x] = matrix[i][my_x] - matrix[yinit][xinit];
@@ -226,23 +245,25 @@ void nolow () {
 }
 
 void settings () {
-    char setting[5];
+    int setting;
     int menu = 0;
-    system("clear");
-    printf ("> Settings\n\n");
+    clear();
+    printw ("> Settings\n\n");
     while (menu == 0) {
-        printf ("Menu [0]\nGrid size? [3-9] ");
-        scanf ("%5s", setting);
-        switch (setting[0]) {
-            case '0': menu = 1; break;
-            case '3': grid = 3; gridset = 1; menu = 1; break;
-            case '4': grid = 4; gridset = 1; menu = 1; break;
-            case '5': grid = 5; gridset = 1; menu = 1; break;
-            case '6': grid = 6; gridset = 1; menu = 1; break;
-            case '7': grid = 7; gridset = 1; menu = 1; break;
-            case '8': grid = 8; gridset = 1; menu = 1; break;
-            case '9': grid = 9; gridset = 1; menu = 1; break;
-            default: printf("Retry\n"); break;
+        printw ("Menu [q]\nGrid size? [3-9]");
+        refresh();
+        setting = getch();
+        switch (setting) {
+        case 'q': menu = 1; break;
+        case '3': grid = 3; gridset = 1; menu = 1; break;
+        case '4': grid = 4; gridset = 1; menu = 1; break;
+        case '5': grid = 5; gridset = 1; menu = 1; break;
+        case '6': grid = 6; gridset = 1; menu = 1; break;
+        case '7': grid = 7; gridset = 1; menu = 1; break;
+        case '8': grid = 8; gridset = 1; menu = 1; break;
+        case '9': grid = 9; gridset = 1; menu = 1; break;
+        default: printw("Retry\n"); break;
+            refresh();
         }
     }
 }
@@ -261,7 +282,6 @@ void ranking () {
     int grid_val = grid;
     int printed;
     rewind (fp);
-    getchar ();
     do {
         fscanf (fp, "%li %d %s %d", &result[i].res_time, &result[i].moves, result[i].user, &result[i].grid);
         i++;  
@@ -276,55 +296,63 @@ void ranking () {
         }
     }
     do {
-        system("clear");
+        clear();
         if (grid_val >= 3 && grid_val <= 9)
-            printf ("Best results (%dx%d matrix):\n\n", grid_val, grid_val);
+        {
+            printw ("Best results (%dx%d matrix):\n\n", grid_val, grid_val);
+            refresh();
+        }
         else if (grid_val == 1)
-            printf ("Best results:\n\n");
+            printw ("Best results:\n\n");
         printed = 0;
         for (i = 0; result[i].moves != 0; i++) {
             if ((result[i].grid == grid_val || grid_val == 1) && printed < 9) {
                 time_string[i] = ctime(&result[i].res_time);
-                printf ("# %d - %3d moves\t- (%dx%d matrix) - %s\t- %s", printed + 1, result[i].moves, result[i].grid, result[i].grid, result[i].user, time_string[i]);
+                printw ("# %d - %3d moves\t- (%dx%d matrix) - %s\t- %s", printed + 1, result[i].moves, result[i].grid, result[i].grid, result[i].user, time_string[i]);
+                refresh();
                 printed++;
             }
         }
         if (printed == 0) {
-            printf ("Nothing to show...\n");
+            printw ("Nothing to show...\n");
+            refresh();
         }
+        printw ("\nMenu [q]; To filter by matrix size [3-9]; No filter [1] ");
+        refresh();
+
         do {
-            printf ("\nMenu [0]; To filter by matrix size [3-9]; No filter [1] ");
-            scanf ("%1d", &grid_val);
-            getchar();
-        } while ((grid_val < 3 || grid_val > 9) && grid_val != 1 && grid_val != 0);
-    } while (grid_val != 0);
+            grid_val = getch() - '0';
+            // exit with 'q' - '0'
+        } while ((grid_val < 3 || grid_val > 9) && grid_val != 1 && grid_val != 'q'-'0');
+    } while (grid_val != ('q'-'0'));
 }
 
 void rules () {
-    system("clear");
-    getchar ();
-    printf ("> Rules\n\n");
-    printf ("Delete numbers on the table by moving the pointer.\n");
-    printf ("That's all you need to know\n");
-    getchar ();
+    clear();
+    printw ("> Rules\n\n");
+    printw ("Delete numbers on the table by moving the pointer.\n");
+    printw ("That's all you need to know\n");
+    refresh();
+    getch();
 }
 
 // print matrix
 void printm () {
     int i, j;
-    system("clear");
-    printf ("\n\n");
+    clear();
+    printw ("\n\n");
     for (i = 0; i < grid; i++) {
         for (j = 0;j < grid; j++) {
             if (i == my_y && j == my_x)
-                printf ("> ");
+                printw ("> ");
             if (matrix[i][j] != 0)
-                    printf ("%d\t", matrix[i][j]);
-                else
-                    printf (" \t");
+                printw ("%d\t", matrix[i][j]);
+            else
+                printw (" \t");
         }
-        printf ("\n\n");
+        printw ("\n\n");
     }
+    refresh();
 }
 
 int win () {
@@ -335,17 +363,15 @@ int win () {
                 count++;
         }
     }
+    
     if (count >= grid * (grid - 1)) {
-        printf ("\nYou win! Moves: %d\n", moves);
+        printw ("\nYou win! Moves: %d\n", moves);
+        refresh ();
         getchar ();
         return 1;
     }else{
-        printf ("\nYou still need to delete %d numbers. Moves: %d", grid * (grid - 1) - count, moves);
+        printw ("\nYou still need to delete %d numbers. Moves: %d", grid * (grid - 1) - count, moves);
+        refresh();
         return 0;
     }
-}
-
-int error () {
-    printf ("ERROR!!!");
-    return 1;
 }
