@@ -1,4 +1,4 @@
-#define VERSION "1.01"
+#define VERSION "1.02"
 
 #define N 9
 #define USERNAME_LENGTH 10
@@ -36,6 +36,10 @@ int main () {
     cbreak();
     keypad(stdscr, true);
 
+    if (has_colors() == TRUE) {
+        start_color();
+        init_pair(1, COLOR_BLACK, COLOR_WHITE);
+    }
     srand (time(NULL));
     fp = fopen ("roofus.txt", "a+");
     if (fp == NULL) {
@@ -343,12 +347,26 @@ void printm () {
     printw ("\n\n");
     for (i = 0; i < grid; i++) {
         for (j = 0;j < grid; j++) {
-            if (i == my_y && j == my_x)
-                printw ("> ");
+            if (i == my_y && j == my_x) {
+                if (has_colors() == TRUE) {
+                      attron(COLOR_PAIR(1));
+                  } else {
+                      printw ("> ");
+                  }
+            }
             if (matrix[i][j] != 0)
-                printw ("%d\t", matrix[i][j]);
-            else
-                printw (" \t");
+                printw ("%d", matrix[i][j]);
+            else {
+              if (has_colors() == FALSE) {
+                   printw (" ");
+              } else {
+                printw(".");
+              }
+            }
+            if (has_colors() == TRUE) {
+                attroff(COLOR_PAIR(1));
+            }
+            printw("\t");
         }
         printw ("\n\n");
     }
